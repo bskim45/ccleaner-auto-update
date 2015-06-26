@@ -32,7 +32,7 @@ setup(
     description = "CCleaner Auto Updater 0.1",
     author="Bums Kim",
     author_email="bskim45@gmail.com",
-    #url="http://goldenclickonline.appspot.com",
+    url="http://bsk.im",
 
     # packaging
     options = {"py2exe": options},
