@@ -140,7 +140,7 @@ def DeleteInstaller():
 
 def main(argv):
     # parse config file
-    configfile = './CCleanerAutoUpdate.cfg'
+    configfile = './config.cfg'
     if len(argv) == 2:
         configfile = argv[1]
     config = ParseConfig(configfile)
