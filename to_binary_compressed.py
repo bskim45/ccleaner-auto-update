@@ -28,7 +28,7 @@ options = {
 setup(
     # information
     name = "CCleaner Auto Updater",
-    version = "0.1",
+    version = "0.2",
     description = "CCleaner Auto Updater 0.1",
     author="Bums Kim",
     author_email="bskim45@gmail.com",
