@@ -58,6 +58,6 @@ see [LICENSE](https://github.com/bskim45/ccleanerautoupdate/blob/master/LICENSE)
 [github-release]: https://github.com/bskim45/ccleanerautoupdate/releases
 [git]: http://git-scm.com
 
-[release-img]: https://img.shields.io/badge/release-0.2-green.svg?style=flat-square
+[release-img]: https://img.shields.io/badge/release-0.3-green.svg?style=flat-square
 [license-img]: https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square
 [github-img]: https://img.shields.io/badge/github-bskim45/ccleanerautoupdate-yellowgreen.svg?style=flat-square

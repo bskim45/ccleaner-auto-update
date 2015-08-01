@@ -1,4 +1,4 @@
-# -*- coding: cp949 -*-
+# -*- coding: utf-8 -*-
 from distutils.core import setup
 import py2exe
 
@@ -28,9 +28,9 @@ options = {
 setup(
     # information
     name = "CCleaner Auto Updater",
-    version = "0.2",
-    description = "CCleaner Auto Updater 0.2",
-    author="Bums Kim",
+    version = "0.3",
+    description = "CCleaner Auto Updater 0.3",
+    author="Bumsoo Kim",
     author_email="bskim45@gmail.com",
     url="http://bsk.im",
 
