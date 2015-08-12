@@ -1,6 +1,6 @@
 CCleaner Auto Update
 ==================
-[![license][license-img]][github] [![github][github-img]][github] [![github][release-img]][github-release]
+[![license][license-img]][license] [![github][github-img]][github] [![github][release-img]][github-release]
 
 Automatic updater of [CCleaner (Crap Cleaner)][ccleaner], awesome PC Optimizor for Windows PCs.
 
@@ -52,6 +52,7 @@ Copyright (c) 2015 Bumsoo Kim (http://bsk.im)
 
 see [LICENSE](https://github.com/bskim45/ccleanerautoupdate/blob/master/LICENSE) for details.
 
+[license]: https://github.com/bskim45/ccleanerautoupdate/blob/master/LICENSE
 [ccleaner]: https://www.piriform.com/ccleaner
 [github]: https://github.com/bskim45/ccleanerautoupdate
 [github-issues]: https://github.com/lbskim45/ccleanerautoupdate/issues
@@ -59,5 +60,5 @@ see [LICENSE](https://github.com/bskim45/ccleanerautoupdate/blob/master/LICENSE)
 [git]: http://git-scm.com
 
 [release-img]: https://img.shields.io/badge/release-0.3-green.svg?style=flat-square
-[license-img]: https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square
+[license-img]: https://img.shields.io/github/license/bskim45/ccleanerautoupdate.svg?style=flat-square
 [github-img]: https://img.shields.io/badge/github-bskim45/ccleanerautoupdate-yellowgreen.svg?style=flat-square
