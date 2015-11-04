@@ -10,8 +10,8 @@ Free version of CCleaner does not support automatic update, and only notifies it
 Please consider buy CCleaner(https://www.piriform.com/ccleaner/download) if you like it.
 
 ## How to use
-There are ready packages for the latest [releases][release].
-If there's no build suit to you, please see [Build][] section to make you own OR it's just fine to use raw Python script.
+There are ready packages for the latest [releases][github-release].
+If there's no build suit to you, please see [Build](#build) section to make you own OR it's just fine to use raw Python script.
 
 Inside of package, you must have to check config.cfg file with following instruction.
 
