@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 from __future__ import print_function
 import sys
+from io import open
 if sys.version_info >= (3,0):
     from urllib.request import urlopen
     PYTHON3 = True
