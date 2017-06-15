@@ -66,10 +66,7 @@ def CheckUpdate(config):
 
     # get version
     with open('version.txt', 'r', encoding="utf-16") as f:
-        if PYTHON3:
-            text = f.read()
-        else:
-            text = unicode(f.read(), 'utf-16')
+        text = f.read()
         iv_txt = text.split(u'\n')[1].strip()
 
     # current release version
