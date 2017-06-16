@@ -1,13 +1,22 @@
 # -*- coding: UTF-8 -*-
+from __future__ import print_function
 import sys
+from io import open
+if sys.version_info >= (3,0):
+    from urllib.request import urlopen
+    PYTHON3 = True
+else:
+    from urllib2 import urlopen
+    PYTHON3 = False
 import os
-import urllib2
 import re
 
 
 def GetHTML(URL):
-    res = urllib2.urlopen(URL)
+    res = urlopen(URL)
     html = res.read()
+    if PYTHON3:
+        html = str(html)
     res.close()
     return html
 
@@ -47,21 +56,21 @@ class Version:
 def CheckUpdate(config):
     # check CCleaner.exe exists!
     if os.path.exists(config['ccleaner_path']) == False:
-        print >> sys.stderr, '%s does not exist!' % config['ccleaner_path']
+        print('%s does not exist!' % config['ccleaner_path'], file=sys.stderr)
         return 1
 
     # local ccleaner version
-    print "Checking installed CCleaner's version..."
+    print("Checking installed CCleaner's version...")
     command = 'wmic DATAFILE WHERE NAME="%s" GET version > version.txt' % config['ccleaner_path']
     os.system(command)
 
     # get version
-    with open('version.txt', 'r') as f:
-        text = unicode(f.read(), 'utf-16')
+    with open('version.txt', 'r', encoding="utf-16") as f:
+        text = f.read()
         iv_txt = text.split(u'\n')[1].strip()
 
     # current release version
-    print 'Checking current CCleaner version at Piriform...'
+    print('Checking current CCleaner version at Piriform...')
     release_html = GetHTML(config['release_url'])
     release_exp = re.compile(config['release_re'], re.DOTALL | re.MULTILINE)
     release_srch = release_exp.search(release_html).groups()
@@ -69,22 +78,22 @@ def CheckUpdate(config):
     cv_txt = release_srch[0].strip()[1:]  # exclude heading 'v'
     reldate = release_srch[1].strip()
 
-    # To canonical versino expression.
+    # To canonical version expression.
     installed_ver = Version()
     current_ver = Version()
 
     installed_ver.FromLocalVersionString(iv_txt)
     current_ver.FromCurrentVersionString(cv_txt)
 
-    print 'Installed CCleaner version:', installed_ver
-    print 'Current CCleaner version:', current_ver, reldate
+    print('Installed CCleaner version:', installed_ver)
+    print('Current CCleaner version:', current_ver, reldate)
 
     # compare two
     if installed_ver == current_ver:
-        print 'You\'re using current version. Nothing to do.'
+        print('You\'re using current version. Nothing to do.')
         return 0
     else:
-        print 'There\'s a new update available!'
+        print('There\'s a new update available!')
 
     # installer pre-delete
     if config['keep_file'] == 'pre':
@@ -98,19 +107,19 @@ def CheckUpdate(config):
     url = download_srch.groups()[0]
     filename = url.split('/')[-1]
 
-    print 'Begin download...'
-    obj = urllib2.urlopen(url)
+    print('Begin download...')
+    obj = urlopen(url)
 
     with open(filename, 'wb') as f:
         chunk_read(f, obj, report_hook=chunk_report)
 
-    print 'Download complete!'
+    print('Download complete!')
 
     cmd = filename + ' ' + config['install_arg']
 
-    print 'Installing...'
+    print('Installing...')
     os.system(cmd)
-    print 'Complete!'
+    print('Complete!')
 
     # installer post-delete
     if config['keep_file'] == 'post':
@@ -130,7 +139,10 @@ def chunk_report(bytes_so_far, chunk_size, total_size):
 
 
 def chunk_read(f, response, chunk_size=8192, report_hook=None):
-    total_size = response.info().getheader('Content-Length').strip()
+    if PYTHON3:
+        total_size = response.getheader('Content-Length').strip()
+    else:
+        total_size = response.info().getheader('Content-Length').strip()
     total_size = int(total_size)
     bytes_so_far = 0
 
@@ -165,7 +177,7 @@ def ParseConfig(configfile):
 
 def DeleteInstaller():
     os.system('del ccsetup*.exe')
-    print 'Installer Cleaned!'
+    print('Installer Cleaned!')
     return 0
 
 
