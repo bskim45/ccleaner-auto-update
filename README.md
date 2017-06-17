@@ -23,8 +23,16 @@ Inside of package, you must have to check config.cfg file with following instruc
 * **install_arg**:	Installer arguments. Please pick your preferred language from http://support.microsoft.com/kb/221435 and replace `1042`(Currnetly set to Korean) with your locale code. You can optionally set installer arguments like `/S`(Silent install)
 * **keep_file**: (optional) Option to keep downloaded CCleaner installer. `pre` to keep only latest installer, `post` to preserve nothing. Default is `none` which will keep preserve every downloaded releases.
 
-## Build
-To build executive binary yourself from Python script, you need [py2exe](http://www.py2exe.org/) package. First install proper py2exe package from link.
+## Build your own
+
+### Prerequisites
+- Python >= 2.7 (to build with py2exe Python <= 3.4)
+
+### Build
+To build executive binary yourself from Python script, you need [py2exe](http://www.py2exe.org/) package.
+- Python 2: Install proper py2exe package from link.
+- Python 3: Install via pip ([Python 3.6 is not supported](https://stackoverflow.com/a/42310168/4061803))
+
 
 Then clone this project with [`git`][git]:
 
@@ -48,7 +56,7 @@ If it worked properly, two folders `build`, `dist` will be created. You can find
 
 The MIT License (MIT)
 
-Copyright (c) 2015 Bumsoo Kim (http://bsk.im)
+Copyright (c) 2017 Bumsoo Kim (http://bsk.im)
 
 see [LICENSE](https://github.com/bskim45/ccleanerautoupdate/blob/master/LICENSE) for details.
 
