@@ -1,21 +1,22 @@
 # -*- coding: UTF-8 -*-
 from __future__ import print_function
 import sys
-from io import open
-if sys.version_info >= (3,0):
-    from urllib.request import urlopen
-    PYTHON3 = True
-else:
-    from urllib2 import urlopen
-    PYTHON3 = False
 import os
 import re
+from io import open
+
+PY3 = sys.version_info >= (3, 0)
+
+if PY3:
+    from urllib.request import urlopen
+else:
+    from urllib2 import urlopen
 
 
-def GetHTML(URL):
-    res = urlopen(URL)
+def get_html(url):
+    res = urlopen(url)
     html = res.read()
-    if PYTHON3:
+    if PY3:
         html = str(html)
     res.close()
     return html
@@ -23,21 +24,23 @@ def GetHTML(URL):
 
 # Version String Class
 class Version:
-    major = None
-    minor = None
-    build = None
+    def __init__(self):
+        self.major = None
+        self.minor = None
+        self.build = None
 
     # local version string
-    def FromLocalVersionString(self, localVersionString):
-        vers = localVersionString.split('.')
+    def from_local_version_string(self, version_str):
+        vers = version_str.split('.')
         self.major = int(vers[0])
         self.minor = int(vers[1])
-        # self.minor = int('%s%s' % (vers[1], vers[2]))  #verse[2] is currently not used (always remained as zero)
+        # verse[2] is currently not used (always remained as zero)
+        # self.minor = int('%s%s' % (vers[1], vers[2]))
         self.build = int(vers[3])
 
     # remote version string
-    def FromCurrentVersionString(self, currentVersionString):
-        vers = currentVersionString.split('.')
+    def from_current_version_string(self, version_str):
+        vers = version_str.split('.')
         self.major = int(vers[0])
         self.minor = int(vers[1])
         self.build = int(vers[2])
@@ -45,23 +48,25 @@ class Version:
     def __str__(self):
         return '%d/%d/%d' % (self.major, self.minor, self.build)
 
-    # compare (be aware that always local <= remote, only need to define !=, ==)
+    # compare (always local <= remote, only need to define !=, ==)
     def __eq__(self, other):
-        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+        return isinstance(other, self.__class__)\
+               and self.__dict__ == other.__dict__
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
 
-def CheckUpdate(config):
+def check_update(config):
     # check CCleaner.exe exists!
-    if os.path.exists(config['ccleaner_path']) == False:
+    if not os.path.exists(config['ccleaner_path']):
         print('%s does not exist!' % config['ccleaner_path'], file=sys.stderr)
         return 1
 
     # local ccleaner version
     print("Checking installed CCleaner's version...")
-    command = 'wmic DATAFILE WHERE NAME="%s" GET version > version.txt' % config['ccleaner_path']
+    command = 'wmic DATAFILE WHERE NAME="%s" GET version > version.txt' % \
+              config['ccleaner_path']
     os.system(command)
 
     # get version
@@ -71,22 +76,22 @@ def CheckUpdate(config):
 
     # current release version
     print('Checking current CCleaner version at Piriform...')
-    release_html = GetHTML(config['release_url'])
+    release_html = get_html(config['release_url'])
     release_exp = re.compile(config['release_re'], re.DOTALL | re.MULTILINE)
     release_srch = release_exp.search(release_html).groups()
 
-    cv_txt = release_srch[0].strip()[1:]  # exclude heading 'v'
-    reldate = release_srch[1].strip()
+    ver_str = release_srch[0].strip()[1:]  # exclude heading 'v'
+    release_date = release_srch[1].strip()
 
     # To canonical version expression.
     installed_ver = Version()
     current_ver = Version()
 
-    installed_ver.FromLocalVersionString(iv_txt)
-    current_ver.FromCurrentVersionString(cv_txt)
+    installed_ver.from_local_version_string(iv_txt)
+    current_ver.from_current_version_string(ver_str)
 
     print('Installed CCleaner version:', installed_ver)
-    print('Current CCleaner version:', current_ver, reldate)
+    print('Current CCleaner version:', current_ver, release_date)
 
     # compare two
     if installed_ver == current_ver:
@@ -97,14 +102,14 @@ def CheckUpdate(config):
 
     # installer pre-delete
     if config['keep_file'] == 'pre':
-        DeleteInstaller()
+        delete_installer()
 
     # download current release
-    download_html = GetHTML(config['download_url'])
+    download_html = get_html(config['download_url'])
     download_exp = re.compile(config['download_re'])
-    download_srch = download_exp.search(download_html)
+    download_src = download_exp.search(download_html)
 
-    url = download_srch.groups()[0]
+    url = download_src.groups()[0]
     filename = url.split('/')[-1]
 
     print('Begin download...')
@@ -123,7 +128,7 @@ def CheckUpdate(config):
 
     # installer post-delete
     if config['keep_file'] == 'post':
-        DeleteInstaller()
+        delete_installer()
 
     return 0
 
@@ -139,7 +144,7 @@ def chunk_report(bytes_so_far, chunk_size, total_size):
 
 
 def chunk_read(f, response, chunk_size=8192, report_hook=None):
-    if PYTHON3:
+    if PY3:
         total_size = response.getheader('Content-Length').strip()
     else:
         total_size = response.info().getheader('Content-Length').strip()
@@ -162,7 +167,7 @@ def chunk_read(f, response, chunk_size=8192, report_hook=None):
     return bytes_so_far
 
 
-def ParseConfig(configfile):
+def parse_config(configfile):
     config = {}
     with open(configfile, 'r') as f:
         for l in f:
@@ -175,7 +180,7 @@ def ParseConfig(configfile):
     return config
 
 
-def DeleteInstaller():
+def delete_installer():
     os.system('del ccsetup*.exe')
     print('Installer Cleaned!')
     return 0
@@ -186,10 +191,10 @@ def main(argv):
     configfile = './config.cfg'
     if len(argv) == 2:
         configfile = argv[1]
-    config = ParseConfig(configfile)
+    config = parse_config(configfile)
 
     # begin the job
-    return CheckUpdate(config)
+    return check_update(config)
 
 
 if __name__ == '__main__':
