@@ -28,8 +28,8 @@ options = {
 setup(
     # information
     name="CCleaner Auto Updater",
-    version="0.3",
-    description="CCleaner Auto Updater 0.3",
+    version="0.4",
+    description="CCleaner Automatic Updater",
     author="Bumsoo Kim",
     author_email="bskim45@gmail.com",
     url="http://bsk.im",
