@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from distutils.core import setup
+import py2exe  # noqa: ignore=F401
 
 excludes = [
     "pywin",
