@@ -1,33 +1,27 @@
 # -*- coding: UTF-8 -*-
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import sys
 import os
 import re
 from io import open
+import requests
 
 PY3 = sys.version_info >= (3, 0)
 
-if PY3:
-    from urllib.request import urlopen
-else:
-    from urllib2 import urlopen
-
 
 def get_html(url):
-    res = urlopen(url)
-    html = res.read()
-    if PY3:
-        html = str(html)
-    res.close()
-    return html
+    res = requests.get(url)
+    if not res.ok:
+        raise Exception('open url error: {}'.format(url))
+    return res.text
 
 
 # Version String Class
 class Version:
-    def __init__(self):
-        self.major = None
-        self.minor = None
-        self.build = None
+    def __init__(self, major=None, minor=None, build=None):
+        self.major = major
+        self.minor = minor
+        self.build = build
 
     # local version string
     def from_local_version_string(self, version_str):
@@ -50,7 +44,7 @@ class Version:
 
     # compare (always local <= remote, only need to define !=, ==)
     def __eq__(self, other):
-        return isinstance(other, self.__class__)\
+        return isinstance(other, self.__class__) \
                and self.__dict__ == other.__dict__
 
     def __ne__(self, other):
@@ -77,7 +71,8 @@ def check_update(config):
     # current release version
     print('Checking current CCleaner version at Piriform...')
     release_html = get_html(config['release_url'])
-    release_exp = re.compile(config['release_re'], re.DOTALL | re.MULTILINE)
+    release_exp = re.compile(config['release_re'],
+                             flags=re.UNICODE | re.DOTALL | re.MULTILINE)
     release_srch = release_exp.search(release_html).groups()
 
     ver_str = release_srch[0].strip()[1:]  # exclude heading 'v'
@@ -95,10 +90,10 @@ def check_update(config):
 
     # compare two
     if installed_ver == current_ver:
-        print('You\'re using current version. Nothing to do.')
+        print('You are using current version. Nothing to do.')
         return 0
     else:
-        print('There\'s a new update available!')
+        print('New version is available!')
 
     # installer pre-delete
     if config['keep_file'] == 'pre':
@@ -113,10 +108,10 @@ def check_update(config):
     filename = url.split('/')[-1]
 
     print('Begin download...')
-    obj = urlopen(url)
+    res = requests.get(url, stream=True)
 
     with open(filename, 'wb') as f:
-        chunk_read(f, obj, report_hook=chunk_report)
+        chunk_read(f, res, report_hook=chunk_report)
 
     print('Download complete!')
 
@@ -133,36 +128,32 @@ def check_update(config):
     return 0
 
 
-def chunk_report(bytes_so_far, chunk_size, total_size):
-    percent = float(bytes_so_far) / total_size
-    percent = round(percent * 100, 2)
-    sys.stdout.write("Downloaded %d of %d bytes (%0.2f%%)\r" %
-                     (bytes_so_far, total_size, percent))
+def chunk_report(bytes_so_far, total_size):
+    bar_len = 32
+    progress = float(bytes_so_far) / total_size
+    filled_len = int(round(bar_len * progress))
+    percent = round(progress * 100, 2)
+
+    bar = '█' * filled_len + ' ' * (bar_len - filled_len)
+    sys.stdout.write('Downloading |%s| %0.2f%% (%d/%d)\r' % (
+    bar, percent, bytes_so_far, total_size))
+    sys.stdout.flush()
 
     if bytes_so_far >= total_size:
         sys.stdout.write('\n')
 
 
 def chunk_read(f, response, chunk_size=8192, report_hook=None):
-    if PY3:
-        total_size = response.getheader('Content-Length').strip()
-    else:
-        total_size = response.info().getheader('Content-Length').strip()
+    total_size = response.headers['Content-Length'].strip()
     total_size = int(total_size)
     bytes_so_far = 0
 
-    while 1:
-        chunk = response.read(chunk_size)
+    for chunk in response.iter_content(chunk_size):
         f.write(chunk)
         bytes_so_far += len(chunk)
 
-        if not chunk:
-            break
-
         if report_hook:
-            report_hook(bytes_so_far, chunk_size, total_size)
-
-    f.close()
+            report_hook(bytes_so_far, total_size)
 
     return bytes_so_far
 
