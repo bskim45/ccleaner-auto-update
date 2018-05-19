@@ -25,21 +25,35 @@ class Version:
         self.minor = minor
         self.build = build
 
-    # local version string
-    def from_local_version_string(self, version_str):
+    @classmethod
+    def from_local_version_string(cls, version_str):
+        # type: (str) -> Version
+        """
+        parse local version string
+        """
         vers = version_str.split('.')
-        self.major = int(vers[0])
-        self.minor = int(vers[1])
-        # verse[2] is currently not used (always remained as zero)
-        # self.minor = int('%s%s' % (vers[1], vers[2]))
-        self.build = int(vers[3])
 
-    # remote version string
-    def from_current_version_string(self, version_str):
+        return Version(
+            major=int(vers[0]),
+            minor=int(vers[1]),
+            # verse[2] is currently not used (always remained as zero)
+            # self.minor = int('%s%s' % (vers[1], vers[2]))
+            build=int(vers[3])
+        )
+
+    @classmethod
+    def from_current_version_string(cls, version_str):
+        # type: (str) -> Version
+        """
+        parse remote version string
+        """
         vers = version_str.split('.')
-        self.major = int(vers[0])
-        self.minor = int(vers[1])
-        self.build = int(vers[2])
+
+        return Version(
+            major=int(vers[0]),
+            minor=int(vers[1]),
+            build=int(vers[2])
+        )
 
     def __str__(self):
         return '%d/%d/%d' % (self.major, self.minor, self.build)
@@ -53,6 +67,38 @@ class Version:
         return not self.__eq__(other)
 
 
+def get_installed_version(exe_path):
+    # type: (str) -> Version
+    # local ccleaner version
+    command = 'wmic DATAFILE WHERE NAME="{}" GET version > version.txt'.format(
+        exe_path)
+    subprocess.call(command, shell=True)
+
+    # get version
+    iv_txt = None
+    with open('version.txt', 'r', encoding="utf-16") as f:
+        text = f.read()
+        iv_txt = text.split('\n')[1].strip()
+
+    return (
+        Version.from_local_version_string(iv_txt) if iv_txt
+        else Version(0, 0, 0)
+    )
+
+
+def get_release_version(check_url, regx_str):
+    # type: (str, str) -> (Version, str)
+    release_html = get_html(check_url)
+    release_exp = re.compile(
+        regx_str, flags=re.UNICODE | re.DOTALL | re.MULTILINE)
+    release_str = release_exp.search(release_html).groups()
+
+    ver_str = release_str[0].strip()[1:]  # exclude heading 'v'
+    release_date = release_str[1].strip()
+
+    return Version.from_current_version_string(ver_str), release_date
+
+
 def check_update(config):
     installed = False
 
@@ -62,38 +108,16 @@ def check_update(config):
     else:
         installed = True
 
-    iv_txt = None
-    if installed:
-        # local ccleaner version
-        print("Checking installed CCleaner's version...")
-        command = 'wmic DATAFILE WHERE NAME="%s" GET version > version.txt' % \
-                  config['ccleaner_path']
-        subprocess.call(command, shell=True)
+    print("Checking installed CCleaner's version...")
+    installed_ver = get_installed_version(
+        config['ccleaner_path']) if installed else Version(0, 0, 0)
 
-        # get version
-        with open('version.txt', 'r', encoding="utf-16") as f:
-            text = f.read()
-            iv_txt = text.split(u'\n')[1].strip()
-
-    # current release version
     print('Checking current CCleaner version at Piriform...')
-    release_html = get_html(config['release_url'])
-    release_exp = re.compile(config['release_re'],
-                             flags=re.UNICODE | re.DOTALL | re.MULTILINE)
-    release_srch = release_exp.search(release_html).groups()
+    current_ver, release_date = get_release_version(
+        config['release_url'], config['release_re'])
 
-    ver_str = release_srch[0].strip()[1:]  # exclude heading 'v'
-    release_date = release_srch[1].strip()
-
-    # To canonical version expression.
-    installed_ver = Version() if installed else Version(0, 0, 0)
-    current_ver = Version()
-
-    if installed:
-        installed_ver.from_local_version_string(iv_txt)
-    current_ver.from_current_version_string(ver_str)
-
-    print('Installed CCleaner version:', installed_ver)
+    print('Installed CCleaner version:',
+          installed_ver if installed else 'Not installed')
     print('Current CCleaner version:', current_ver, release_date)
 
     # compare two
@@ -195,7 +219,6 @@ def main(argv):
         configfile = argv[1]
     config = parse_config(configfile)
 
-    # begin the job
     win_unicode_console.enable()
     result = check_update(config)
     win_unicode_console.disable()
