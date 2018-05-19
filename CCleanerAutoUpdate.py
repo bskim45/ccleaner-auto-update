@@ -52,21 +52,26 @@ class Version:
 
 
 def check_update(config):
+    installed = False
+
     # check CCleaner.exe exists!
     if not os.path.exists(config['ccleaner_path']):
         print('%s does not exist!' % config['ccleaner_path'], file=sys.stderr)
-        return 1
+    else:
+        installed = True
 
-    # local ccleaner version
-    print("Checking installed CCleaner's version...")
-    command = 'wmic DATAFILE WHERE NAME="%s" GET version > version.txt' % \
-              config['ccleaner_path']
-    os.system(command)
+    iv_txt = None
+    if installed:
+        # local ccleaner version
+        print("Checking installed CCleaner's version...")
+        command = 'wmic DATAFILE WHERE NAME="%s" GET version > version.txt' % \
+                  config['ccleaner_path']
+        os.system(command)
 
-    # get version
-    with open('version.txt', 'r', encoding="utf-16") as f:
-        text = f.read()
-        iv_txt = text.split(u'\n')[1].strip()
+        # get version
+        with open('version.txt', 'r', encoding="utf-16") as f:
+            text = f.read()
+            iv_txt = text.split(u'\n')[1].strip()
 
     # current release version
     print('Checking current CCleaner version at Piriform...')
@@ -79,10 +84,11 @@ def check_update(config):
     release_date = release_srch[1].strip()
 
     # To canonical version expression.
-    installed_ver = Version()
+    installed_ver = Version() if installed else Version(0, 0, 0)
     current_ver = Version()
 
-    installed_ver.from_local_version_string(iv_txt)
+    if installed:
+        installed_ver.from_local_version_string(iv_txt)
     current_ver.from_current_version_string(ver_str)
 
     print('Installed CCleaner version:', installed_ver)
