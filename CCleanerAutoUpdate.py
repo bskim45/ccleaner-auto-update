@@ -6,6 +6,7 @@ import subprocess
 import re
 from io import open
 import requests
+import win_unicode_console
 
 PY3 = sys.version_info >= (3, 0)
 
@@ -146,7 +147,7 @@ def chunk_report(bytes_so_far, total_size):
 
     bar = '█' * filled_len + ' ' * (bar_len - filled_len)
     sys.stdout.write('Downloading |%s| %0.2f%% (%d/%d)\r' % (
-    bar, percent, bytes_so_far, total_size))
+        bar, percent, bytes_so_far, total_size))
     sys.stdout.flush()
 
     if bytes_so_far >= total_size:
@@ -195,7 +196,11 @@ def main(argv):
     config = parse_config(configfile)
 
     # begin the job
-    return check_update(config)
+    win_unicode_console.enable()
+    result = check_update(config)
+    win_unicode_console.disable()
+
+    return result
 
 
 if __name__ == '__main__':
