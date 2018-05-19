@@ -2,6 +2,7 @@
 from __future__ import print_function, unicode_literals
 import sys
 import os
+import subprocess
 import re
 from io import open
 import requests
@@ -66,7 +67,7 @@ def check_update(config):
         print("Checking installed CCleaner's version...")
         command = 'wmic DATAFILE WHERE NAME="%s" GET version > version.txt' % \
                   config['ccleaner_path']
-        os.system(command)
+        subprocess.call(command, shell=True)
 
         # get version
         with open('version.txt', 'r', encoding="utf-16") as f:
@@ -124,8 +125,11 @@ def check_update(config):
     cmd = filename + ' ' + config['install_arg']
 
     print('Installing...')
-    os.system(cmd)
-    print('Complete!')
+
+    if subprocess.call(cmd, shell=True) == 0:
+        print('Complete!')
+    else:
+        print('Something went wrong')
 
     # installer post-delete
     if config['keep_file'] == 'post':
@@ -178,7 +182,7 @@ def parse_config(configfile):
 
 
 def delete_installer():
-    os.system('del ccsetup*.exe')
+    subprocess.call('del ccsetup*.exe', shell=True)
     print('Installer Cleaned!')
     return 0
 
