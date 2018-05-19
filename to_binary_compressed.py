@@ -28,11 +28,11 @@ options = {
 setup(
     # information
     name="CCleaner Auto Updater",
-    version="0.4",
+    version="0.5",
     description="CCleaner Automatic Updater",
     author="Bumsoo Kim",
     author_email="bskim45@gmail.com",
-    url="http://bsk.im",
+    url="https://bsk.im",
 
     # packaging
     options={"py2exe": options},

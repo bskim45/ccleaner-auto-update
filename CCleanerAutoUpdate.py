@@ -1,104 +1,131 @@
 # -*- coding: UTF-8 -*-
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import sys
 import os
+import subprocess
 import re
 from io import open
+import requests
+import win_unicode_console
 
 PY3 = sys.version_info >= (3, 0)
 
-if PY3:
-    from urllib.request import urlopen
-else:
-    from urllib2 import urlopen
-
 
 def get_html(url):
-    res = urlopen(url)
-    html = res.read()
-    if PY3:
-        html = str(html)
-    res.close()
-    return html
+    res = requests.get(url)
+    if not res.ok:
+        raise Exception('open url error: {}'.format(url))
+    return res.text
 
 
 # Version String Class
 class Version:
-    def __init__(self):
-        self.major = None
-        self.minor = None
-        self.build = None
+    def __init__(self, major=None, minor=None, build=None):
+        self.major = major
+        self.minor = minor
+        self.build = build
 
-    # local version string
-    def from_local_version_string(self, version_str):
+    @classmethod
+    def from_local_version_string(cls, version_str):
+        # type: (str) -> Version
+        """
+        parse local version string
+        """
         vers = version_str.split('.')
-        self.major = int(vers[0])
-        self.minor = int(vers[1])
-        # verse[2] is currently not used (always remained as zero)
-        # self.minor = int('%s%s' % (vers[1], vers[2]))
-        self.build = int(vers[3])
 
-    # remote version string
-    def from_current_version_string(self, version_str):
+        return Version(
+            major=int(vers[0]),
+            minor=int(vers[1]),
+            # verse[2] is currently not used (always remained as zero)
+            # self.minor = int('%s%s' % (vers[1], vers[2]))
+            build=int(vers[3])
+        )
+
+    @classmethod
+    def from_current_version_string(cls, version_str):
+        # type: (str) -> Version
+        """
+        parse remote version string
+        """
         vers = version_str.split('.')
-        self.major = int(vers[0])
-        self.minor = int(vers[1])
-        self.build = int(vers[2])
+
+        return Version(
+            major=int(vers[0]),
+            minor=int(vers[1]),
+            build=int(vers[2])
+        )
 
     def __str__(self):
         return '%d/%d/%d' % (self.major, self.minor, self.build)
 
     # compare (always local <= remote, only need to define !=, ==)
     def __eq__(self, other):
-        return isinstance(other, self.__class__)\
+        return isinstance(other, self.__class__) \
                and self.__dict__ == other.__dict__
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
 
+def get_installed_version(exe_path):
+    # type: (str) -> Version
+    # local ccleaner version
+    command = 'wmic DATAFILE WHERE NAME="{}" GET version > version.txt'.format(
+        exe_path)
+    subprocess.call(command, shell=True)
+
+    # get version
+    iv_txt = None
+    with open('version.txt', 'r', encoding="utf-16") as f:
+        text = f.read()
+        iv_txt = text.split('\n')[1].strip()
+
+    return (
+        Version.from_local_version_string(iv_txt) if iv_txt
+        else Version(0, 0, 0)
+    )
+
+
+def get_release_version(check_url, regx_str):
+    # type: (str, str) -> (Version, str)
+    release_html = get_html(check_url)
+    release_exp = re.compile(
+        regx_str, flags=re.UNICODE | re.DOTALL | re.MULTILINE)
+    release_str = release_exp.search(release_html).groups()
+
+    ver_str = release_str[0].strip()[1:]  # exclude heading 'v'
+    release_date = release_str[1].strip()
+
+    return Version.from_current_version_string(ver_str), release_date
+
+
 def check_update(config):
+    installed = False
+
     # check CCleaner.exe exists!
     if not os.path.exists(config['ccleaner_path']):
         print('%s does not exist!' % config['ccleaner_path'], file=sys.stderr)
-        return 1
+    else:
+        installed = True
 
-    # local ccleaner version
     print("Checking installed CCleaner's version...")
-    command = 'wmic DATAFILE WHERE NAME="%s" GET version > version.txt' % \
-              config['ccleaner_path']
-    os.system(command)
+    installed_ver = get_installed_version(
+        config['ccleaner_path']) if installed else Version(0, 0, 0)
 
-    # get version
-    with open('version.txt', 'r', encoding="utf-16") as f:
-        text = f.read()
-        iv_txt = text.split(u'\n')[1].strip()
-
-    # current release version
     print('Checking current CCleaner version at Piriform...')
-    release_html = get_html(config['release_url'])
-    release_exp = re.compile(config['release_re'], re.DOTALL | re.MULTILINE)
-    release_srch = release_exp.search(release_html).groups()
+    current_ver, release_date = get_release_version(
+        config['release_url'], config['release_re'])
 
-    ver_str = release_srch[0].strip()[1:]  # exclude heading 'v'
-    release_date = release_srch[1].strip()
-
-    # To canonical version expression.
-    installed_ver = Version()
-    current_ver = Version()
-
-    installed_ver.from_local_version_string(iv_txt)
-    current_ver.from_current_version_string(ver_str)
-
-    print('Installed CCleaner version:', installed_ver)
+    print('Installed CCleaner version:',
+          installed_ver if installed else 'Not installed')
     print('Current CCleaner version:', current_ver, release_date)
 
     # compare two
     if installed_ver == current_ver:
-        print('You\'re using current version. Nothing to do.')
+        print('You are using current version. Nothing to do.')
         return 0
     else:
-        print('There\'s a new update available!')
+        print('New version is available!')
 
     # installer pre-delete
     if config['keep_file'] == 'pre':
@@ -113,18 +140,21 @@ def check_update(config):
     filename = url.split('/')[-1]
 
     print('Begin download...')
-    obj = urlopen(url)
+    res = requests.get(url, stream=True)
 
     with open(filename, 'wb') as f:
-        chunk_read(f, obj, report_hook=chunk_report)
+        chunk_read(f, res, report_hook=chunk_report)
 
     print('Download complete!')
 
     cmd = filename + ' ' + config['install_arg']
 
     print('Installing...')
-    os.system(cmd)
-    print('Complete!')
+
+    if subprocess.call(cmd, shell=True) == 0:
+        print('Complete!')
+    else:
+        print('Something went wrong')
 
     # installer post-delete
     if config['keep_file'] == 'post':
@@ -133,36 +163,32 @@ def check_update(config):
     return 0
 
 
-def chunk_report(bytes_so_far, chunk_size, total_size):
-    percent = float(bytes_so_far) / total_size
-    percent = round(percent * 100, 2)
-    sys.stdout.write("Downloaded %d of %d bytes (%0.2f%%)\r" %
-                     (bytes_so_far, total_size, percent))
+def chunk_report(bytes_so_far, total_size):
+    bar_len = 32
+    progress = float(bytes_so_far) / total_size
+    filled_len = int(round(bar_len * progress))
+    percent = round(progress * 100, 2)
+
+    bar = '█' * filled_len + ' ' * (bar_len - filled_len)
+    sys.stdout.write('Downloading |%s| %0.2f%% (%d/%d)\r' % (
+        bar, percent, bytes_so_far, total_size))
+    sys.stdout.flush()
 
     if bytes_so_far >= total_size:
         sys.stdout.write('\n')
 
 
 def chunk_read(f, response, chunk_size=8192, report_hook=None):
-    if PY3:
-        total_size = response.getheader('Content-Length').strip()
-    else:
-        total_size = response.info().getheader('Content-Length').strip()
+    total_size = response.headers['Content-Length'].strip()
     total_size = int(total_size)
     bytes_so_far = 0
 
-    while 1:
-        chunk = response.read(chunk_size)
+    for chunk in response.iter_content(chunk_size):
         f.write(chunk)
         bytes_so_far += len(chunk)
 
-        if not chunk:
-            break
-
         if report_hook:
-            report_hook(bytes_so_far, chunk_size, total_size)
-
-    f.close()
+            report_hook(bytes_so_far, total_size)
 
     return bytes_so_far
 
@@ -181,7 +207,7 @@ def parse_config(configfile):
 
 
 def delete_installer():
-    os.system('del ccsetup*.exe')
+    subprocess.call('del ccsetup*.exe', shell=True)
     print('Installer Cleaned!')
     return 0
 
@@ -193,8 +219,11 @@ def main(argv):
         configfile = argv[1]
     config = parse_config(configfile)
 
-    # begin the job
-    return check_update(config)
+    win_unicode_console.enable()
+    result = check_update(config)
+    win_unicode_console.disable()
+
+    return result
 
 
 if __name__ == '__main__':
