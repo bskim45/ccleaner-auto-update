@@ -56,7 +56,7 @@ If it worked properly, two folders `build`, `dist` will be created. You can find
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Bumsoo Kim (http://bsk.im)
+Copyright (c) 2018 Bumsoo Kim (http://bsk.im)
 
 see [LICENSE](https://github.com/bskim45/ccleanerautoupdate/blob/master/LICENSE) for details.
 
@@ -67,6 +67,6 @@ see [LICENSE](https://github.com/bskim45/ccleanerautoupdate/blob/master/LICENSE)
 [github-release]: https://github.com/bskim45/ccleanerautoupdate/releases
 [git]: http://git-scm.com
 
-[release-img]: https://img.shields.io/badge/release-0.3-green.svg?style=flat-square
+[release-img]: https://img.shields.io/badge/release-0.5-green.svg?style=flat-square
 [license-img]: https://img.shields.io/github/license/bskim45/ccleanerautoupdate.svg?style=flat-square
 [github-img]: https://img.shields.io/badge/github-bskim45/ccleanerautoupdate-yellowgreen.svg?style=flat-square
